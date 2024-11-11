@@ -6,8 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Optional;
 
@@ -21,20 +23,28 @@ public class MedicoController {
     
     @PostMapping
     @Transactional
-    public void cadastrarMedico(@RequestBody @Valid DadosCadastroMedico dados){
-        medicoRepository.save(new Medico(dados));
+    public ResponseEntity cadastrarMedico(@RequestBody @Valid DadosCadastroMedico dados, UriComponentsBuilder uriBuilder){
+        var medico = new Medico(dados);
+        medicoRepository.save(medico);
+
+        var uri = uriBuilder.path("/medicos/{id}").buildAndExpand(medico.getId()).toUri();
+
+        return ResponseEntity.created(uri).body(new DadosDetalhamentoMedico(medico));
     }
 
     @GetMapping
-    public Page<DadosListagemMedico> listarMedicos(@PageableDefault(size = 10, sort = {"nome"}) Pageable pageable){
-        return medicoRepository.findAllByAtivoTrue(pageable).map(DadosListagemMedico::new);
+    public ResponseEntity<Page<DadosListagemMedico>> listarMedicos(@PageableDefault(size = 10, sort = {"nome"}) Pageable pageable){
+        var page = medicoRepository.findAllByAtivoTrue(pageable).map(DadosListagemMedico::new);
+        return ResponseEntity.ok(page);
     }
 
     @PutMapping
     @Transactional
-    public void atualizarMedico(@RequestBody @Valid DadosAtualizacaoMedico dados){
+    public ResponseEntity atualizarMedico(@RequestBody @Valid DadosAtualizacaoMedico dados){
         var medico = medicoRepository.getReferenceById(dados.id());
         medico.atualizarInformacoes(dados);
+        
+        return ResponseEntity.ok(new DadosDetalhamentoMedico(medico));
     }
 
 //    @DeleteMapping("/{id}") apagar do banco de dados
@@ -45,9 +55,18 @@ public class MedicoController {
 
     @DeleteMapping("/{id}")
     @Transactional
-    public void deleteMedico(@PathVariable Long id){
+    public ResponseEntity deleteMedico(@PathVariable Long id){
         var medico = medicoRepository.getReferenceById(id);
         medico.excluir();
+
+        return ResponseEntity.noContent().build();
     }
-    
+
+    @GetMapping("/{id}")
+    public ResponseEntity detalharMedico(@PathVariable Long id){
+        var medico = medicoRepository.getReferenceById(id);
+
+        return ResponseEntity.ok(new DadosDetalhamentoMedico(medico));
+    }
+
 }

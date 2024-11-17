@@ -1,7 +1,7 @@
 package med.voll.api.controller;
 
 import jakarta.validation.Valid;
-import med.voll.api.paciente.*;
+import med.voll.api.domain.paciente.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,7 +23,7 @@ public class PacienteController {
     }
 
     @GetMapping
-    public Page<DadosListagemPaciente> pacientes(@PageableDefault(size = 5, sort = {"nome"}) Pageable pageable) {
+    public Page<DadosListagemPaciente> pacientes( @PageableDefault(size = 5, sort = {"nome"}) Pageable pageable) {
         return pacienteRepository.findAllByAtivoTrue(pageable).map(DadosListagemPaciente::new);
     }
 
